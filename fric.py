@@ -97,66 +97,71 @@ def display_formulas():
     st.write("- R: Total resistance")
     st.write("- W: TBM weight")
 
-def create_tbm_animation(tbm_properties, depth, water_table_depth, vertical_stress, horizontal_stress, pore_pressure, shield_friction):
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_xlim(-tbm_properties.diameter, tbm_properties.diameter * 2)
-    ax.set_ylim(-tbm_properties.diameter, depth + tbm_properties.diameter)
-    ax.set_aspect('equal')
+def create_tbm_visualization(tbm_properties, depth, water_table_depth, vertical_stress, horizontal_stress, pore_pressure, shield_friction):
+    fig = go.Figure()
 
     # Ground surface
-    ax.axhline(y=0, color='brown', linewidth=2)
-    
-    # Water table
-    ax.axhline(y=-water_table_depth, color='blue', linestyle='--', linewidth=1)
-    ax.text(tbm_properties.diameter * 1.5, -water_table_depth, 'Water Table', color='blue', va='bottom')
+    fig.add_trace(go.Scatter(x=[-tbm_properties.diameter, tbm_properties.diameter * 2], y=[0, 0],
+                             mode='lines', name='Ground Surface', line=dict(color='brown', width=2)))
 
-    # Soil layers
-    soil = patches.Rectangle((-tbm_properties.diameter, -depth), tbm_properties.diameter * 3, depth, 
-                             facecolor='tan', edgecolor='none', alpha=0.3)
-    ax.add_patch(soil)
+    # Water table
+    fig.add_trace(go.Scatter(x=[-tbm_properties.diameter, tbm_properties.diameter * 2], y=[-water_table_depth, -water_table_depth],
+                             mode='lines', name='Water Table', line=dict(color='blue', width=2, dash='dash')))
+
+    # Soil
+    fig.add_trace(go.Scatter(x=[-tbm_properties.diameter, tbm_properties.diameter * 2, tbm_properties.diameter * 2, -tbm_properties.diameter],
+                             y=[0, 0, -depth, -depth],
+                             fill='toself', fillcolor='tan', opacity=0.3, name='Soil', line=dict(color='tan')))
 
     # TBM
-    tbm = patches.Rectangle((0, -depth), tbm_properties.length, tbm_properties.diameter, 
-                            facecolor='gray', edgecolor='black')
-    ax.add_patch(tbm)
+    fig.add_trace(go.Scatter(x=[0, tbm_properties.length, tbm_properties.length, 0],
+                             y=[-depth - tbm_properties.diameter/2, -depth - tbm_properties.diameter/2,
+                                -depth + tbm_properties.diameter/2, -depth + tbm_properties.diameter/2],
+                             fill='toself', fillcolor='gray', name='TBM', line=dict(color='black')))
 
-    # Stress arrows
-    arrow_props = dict(arrowstyle='->', color='r', lw=2)
-    ax.annotate('', xy=(tbm_properties.length/2, -depth + tbm_properties.diameter/2), 
-                xytext=(tbm_properties.length/2 + tbm_properties.diameter/4, -depth + tbm_properties.diameter/2), 
-                arrowprops=arrow_props)
-    ax.annotate('', xy=(tbm_properties.length, -depth + tbm_properties.diameter/2), 
-                xytext=(tbm_properties.length, -depth + tbm_properties.diameter/2 + tbm_properties.diameter/4), 
-                arrowprops=arrow_props)
+    # Stress arrows and labels
+    arrow_length = tbm_properties.diameter / 4
+    fig.add_annotation(x=tbm_properties.length/2, y=-depth,
+                       ax=tbm_properties.length/2, ay=-depth - arrow_length,
+                       text="", showarrow=True, arrowhead=2, arrowsize=1.5, arrowcolor="red", arrowwidth=2)
+    fig.add_annotation(x=tbm_properties.length, y=-depth + tbm_properties.diameter/2,
+                       ax=tbm_properties.length + arrow_length, ay=-depth + tbm_properties.diameter/2,
+                       text="", showarrow=True, arrowhead=2, arrowsize=1.5, arrowcolor="red", arrowwidth=2)
 
     # Labels
-    ax.text(tbm_properties.length/2, -depth + tbm_properties.diameter * 1.1, f'Vertical Stress: {vertical_stress/1000:.2f} kPa', 
-            ha='center', va='bottom')
-    ax.text(tbm_properties.length * 1.1, -depth + tbm_properties.diameter/2, f'Horizontal Stress: {horizontal_stress/1000:.2f} kPa', 
-            ha='left', va='center')
-    ax.text(0, -depth - tbm_properties.diameter * 0.1, f'Shield Friction: {shield_friction/1000:.2f} kN', 
-            ha='left', va='top')
+    fig.add_annotation(x=tbm_properties.length/2, y=-depth + tbm_properties.diameter * 0.6,
+                       text=f'Vertical Stress: {vertical_stress/1000:.2f} kPa',
+                       showarrow=False, yshift=10)
+    fig.add_annotation(x=tbm_properties.length * 1.1, y=-depth + tbm_properties.diameter/2,
+                       text=f'Horizontal Stress: {horizontal_stress/1000:.2f} kPa',
+                       showarrow=False, xshift=5)
+    fig.add_annotation(x=0, y=-depth - tbm_properties.diameter * 0.6,
+                       text=f'Shield Friction: {shield_friction/1000:.2f} kN',
+                       showarrow=False, yshift=-10)
 
     # Pore pressure
     if depth > water_table_depth:
-        pore_arrow = patches.Arrow(tbm_properties.length/2, -depth, 0, pore_pressure/(vertical_stress*2), 
-                                   width=tbm_properties.diameter/2, color='blue', alpha=0.5)
-        ax.add_patch(pore_arrow)
-        ax.text(tbm_properties.length/2, -depth + pore_pressure/(vertical_stress*4), 
-                f'Pore Pressure: {pore_pressure/1000:.2f} kPa', ha='center', va='center', color='blue')
+        pore_arrow_length = pore_pressure / (vertical_stress * 2) * tbm_properties.diameter
+        fig.add_annotation(x=tbm_properties.length/2, y=-depth,
+                           ax=tbm_properties.length/2, ay=-depth + pore_arrow_length,
+                           text="", showarrow=True, arrowhead=2, arrowsize=1.5, arrowcolor="blue", arrowwidth=2)
+        fig.add_annotation(x=tbm_properties.length/2, y=-depth + pore_arrow_length/2,
+                           text=f'Pore Pressure: {pore_pressure/1000:.2f} kPa',
+                           showarrow=False, font=dict(color="blue"))
 
-    ax.set_title('TBM Shield Friction Visualization')
-    ax.set_xlabel('Distance (m)')
-    ax.set_ylabel('Depth (m)')
+    fig.update_layout(
+        title='TBM Shield Friction Visualization',
+        xaxis_title='Distance (m)',
+        yaxis_title='Depth (m)',
+        showlegend=False,
+        yaxis_range=[-depth - tbm_properties.diameter, tbm_properties.diameter],
+        xaxis_range=[-tbm_properties.diameter, tbm_properties.diameter * 2],
+        height=600,
+        width=800
+    )
 
-    # Animation function
-    def animate(frame):
-        tbm.set_x(frame * tbm_properties.length / 100)
-        return tbm,
-
-    anim = animation.FuncAnimation(fig, animate, frames=100, interval=50, blit=True)
-    return fig, anim
-
+    return fig
+    
 def main():
     st.title("Advanced TBM Shield Friction Calculator with Visualization")
 
@@ -203,14 +208,8 @@ def main():
         st.write(f"Total Resistance (including TBM weight): {total_resistance:.2f} N")
 
         st.write("### TBM Shield Friction Visualization")
-        fig, anim = create_tbm_animation(tbm_properties, depth, water_table_depth, vertical_stress, horizontal_stress, pore_pressure, shield_friction)
-        st_animation = st.pyplot(fig)
-
-        # Animate the plot
-        for i in range(100):
-            anim.event_source.start()
-            plt.close(fig)
-            st_animation.pyplot(fig)
+        fig = create_tbm_visualization(tbm_properties, depth, water_table_depth, vertical_stress, horizontal_stress, pore_pressure, shield_friction)
+        st.plotly_chart(fig)
 
     display_formulas()
 
