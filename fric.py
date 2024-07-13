@@ -1,6 +1,8 @@
 import streamlit as st
 import math
 import plotly.graph_objs as go
+import plotly.express as px
+import pandas as pd
 import numpy as np
 
 class SoilProperties:
@@ -160,57 +162,150 @@ def display_formulas():
     st.write("- R: Total resistance")
     st.write("- W: TBM weight")
 
-def main():
-    st.title("Advanced TBM Shield Friction Calculator with Visualization")
-    st.write("created by **Kursat Kilic** [ZE Geotechnic - Geotech Digitalization]")
+def calculate_all_stresses(soil_properties, tbm_properties, depth, water_table_depth, friction_coefficient, stress_calculation_method):
+    vertical_stress = calculate_vertical_stress(depth, soil_properties)
+    horizontal_stress = calculate_horizontal_stress(vertical_stress, soil_properties, stress_calculation_method)
+    pore_pressure = calculate_pore_pressure(depth, water_table_depth)
+    effective_stress = calculate_effective_stress(horizontal_stress, pore_pressure)
+    normal_force = calculate_normal_force(effective_stress, tbm_properties)
+    shield_friction = calculate_shield_friction(normal_force, friction_coefficient)
+    total_resistance = calculate_total_resistance(shield_friction, tbm_properties)
+    
+    return {
+        "vertical_stress": vertical_stress,
+        "horizontal_stress": horizontal_stress,
+        "pore_pressure": pore_pressure,
+        "effective_stress": effective_stress,
+        "normal_force": normal_force,
+        "shield_friction": shield_friction,
+        "total_resistance": total_resistance
+    }
 
-    st.sidebar.header("Input Parameters")
+def main_page():
+    st.title("TBM Shield Friction Calculator")
+    st.write("Welcome to the TBM Shield Friction Calculator. This tool helps you calculate and visualize various aspects of Tunnel Boring Machine (TBM) shield friction.")
+    st.write("Use the navigation menu on the left to explore different features of the app.")
     
-    depth = st.sidebar.number_input("Tunnel Depth (m)", value=10.0, step=0.1)
-    water_table_depth = st.sidebar.number_input("Water Table Depth (m)", value=5.0, step=0.1)
+    display_formulas()
+
+def calculator_page():
+    st.title("Calculator")
     
-    st.sidebar.subheader("Soil Properties")
-    density = st.sidebar.number_input("Soil Density (kg/m³)", value=1800.0, step=10.0)
-    cohesion = st.sidebar.number_input("Soil Cohesion (Pa)", value=5000.0, step=100.0)
-    friction_angle = st.sidebar.number_input("Soil Friction Angle (degrees)", value=30.0, step=0.1)
-    k0 = st.sidebar.number_input("Coefficient of Lateral Earth Pressure at Rest", value=0.5, step=0.01)
+    col1, col2 = st.columns(2)
     
+    with col1:
+        st.subheader("Tunnel and Soil Properties")
+        depth = st.number_input("Tunnel Depth (m)", value=10.0, step=0.1)
+        water_table_depth = st.number_input("Water Table Depth (m)", value=5.0, step=0.1)
+        density = st.number_input("Soil Density (kg/m³)", value=1800.0, step=10.0)
+        cohesion = st.number_input("Soil Cohesion (Pa)", value=5000.0, step=100.0)
+        friction_angle = st.number_input("Soil Friction Angle (degrees)", value=30.0, step=0.1)
+        k0 = st.number_input("Coefficient of Lateral Earth Pressure at Rest", value=0.5, step=0.01)
+    
+    with col2:
+        st.subheader("TBM Properties")
+        diameter = st.number_input("TBM Diameter (m)", value=6.0, step=0.1)
+        length = st.number_input("TBM Shield Length (m)", value=10.0, step=0.1)
+        weight = st.number_input("TBM Weight (N)", value=5e6, step=1e5)
+        face_pressure = st.number_input("TBM Face Pressure (Pa)", value=2e5, step=1e4)
+        friction_coefficient = st.number_input("Shield-Soil Friction Coefficient", value=0.3, step=0.01)
+        stress_calculation_method = st.selectbox("Stress Calculation Method", ['At Rest', 'Active', 'Passive'])
+
     soil_properties = SoilProperties(density, cohesion, friction_angle, k0)
-    
-    st.sidebar.subheader("TBM Properties")
-    diameter = st.sidebar.number_input("TBM Diameter (m)", value=6.0, step=0.1)
-    length = st.sidebar.number_input("TBM Shield Length (m)", value=10.0, step=0.1)
-    weight = st.sidebar.number_input("TBM Weight (N)", value=5e6, step=1e5)
-    face_pressure = st.sidebar.number_input("TBM Face Pressure (Pa)", value=2e5, step=1e4)
-    
     tbm_properties = TBMProperties(diameter, length, weight, face_pressure)
-    
-    friction_coefficient = st.sidebar.number_input("Shield-Soil Friction Coefficient", value=0.3, step=0.01)
-    stress_calculation_method = st.sidebar.selectbox("Stress Calculation Method", ['At Rest', 'Active', 'Passive'])
 
-    if st.sidebar.button("Calculate and Visualize"):
-        vertical_stress = calculate_vertical_stress(depth, soil_properties)
-        horizontal_stress = calculate_horizontal_stress(vertical_stress, soil_properties, stress_calculation_method)
-        pore_pressure = calculate_pore_pressure(depth, water_table_depth)
-        effective_stress = calculate_effective_stress(horizontal_stress, pore_pressure)
-        normal_force = calculate_normal_force(effective_stress, tbm_properties)
-        shield_friction = calculate_shield_friction(normal_force, friction_coefficient)
-        total_resistance = calculate_total_resistance(shield_friction, tbm_properties)
-
+    if st.button("Calculate"):
+        results = calculate_all_stresses(soil_properties, tbm_properties, depth, water_table_depth, friction_coefficient, stress_calculation_method)
+        
         st.write("### Results")
-        st.write(f"Vertical Stress: {vertical_stress:.2f} Pa")
-        st.write(f"Horizontal Stress: {horizontal_stress:.2f} Pa")
-        st.write(f"Pore Water Pressure: {pore_pressure:.2f} Pa")
-        st.write(f"Effective Stress: {effective_stress:.2f} Pa")
-        st.write(f"Normal Force on Shield: {normal_force:.2f} N")
-        st.write(f"Shield Friction: {shield_friction:.2f} N")
-        st.write(f"Total Resistance (including TBM weight): {total_resistance:.2f} N")
+        for key, value in results.items():
+            st.write(f"{key.replace('_', ' ').title()}: {value:.2f} Pa")
 
-        st.write("### TBM Shield Friction Visualization")
-        fig = create_tbm_visualization(tbm_properties, depth, water_table_depth, vertical_stress, horizontal_stress, pore_pressure, shield_friction)
+def calculator_page():
+    st.title("Calculator")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Tunnel and Soil Properties")
+        depth = st.number_input("Tunnel Depth (m)", value=10.0, step=0.1)
+        water_table_depth = st.number_input("Water Table Depth (m)", value=5.0, step=0.1)
+        density = st.number_input("Soil Density (kg/m³)", value=1800.0, step=10.0)
+        cohesion = st.number_input("Soil Cohesion (Pa)", value=5000.0, step=100.0)
+        friction_angle = st.number_input("Soil Friction Angle (degrees)", value=30.0, step=0.1)
+        k0 = st.number_input("Coefficient of Lateral Earth Pressure at Rest", value=0.5, step=0.01)
+    
+    with col2:
+        st.subheader("TBM Properties")
+        diameter = st.number_input("TBM Diameter (m)", value=6.0, step=0.1)
+        length = st.number_input("TBM Shield Length (m)", value=10.0, step=0.1)
+        weight = st.number_input("TBM Weight (N)", value=5e6, step=1e5)
+        face_pressure = st.number_input("TBM Face Pressure (Pa)", value=2e5, step=1e4)
+        friction_coefficient = st.number_input("Shield-Soil Friction Coefficient", value=0.3, step=0.01)
+        stress_calculation_method = st.selectbox("Stress Calculation Method", ['At Rest', 'Active', 'Passive'])
+
+    soil_properties = SoilProperties(density, cohesion, friction_angle, k0)
+    tbm_properties = TBMProperties(diameter, length, weight, face_pressure)
+
+    if st.button("Visualize"):
+        results = calculate_all_stresses(soil_properties, tbm_properties, depth, water_table_depth, friction_coefficient, stress_calculation_method)
+        
+        fig = create_tbm_visualization(tbm_properties, depth, water_table_depth, 
+                                       results["vertical_stress"], results["horizontal_stress"], 
+                                       results["pore_pressure"], results["shield_friction"])
         st.plotly_chart(fig)
 
-    display_formulas()
+def data_analysis_page():
+    st.title("Data Analysis")
+
+    st.write("Explore how different factors influence TBM shield friction.")
+
+    # Generate sample data
+    depths = np.linspace(5, 50, 50)
+    friction_coefficients = np.linspace(0.1, 0.5, 5)
+    
+    results = []
+    for depth in depths:
+        for fc in friction_coefficients:
+            soil_properties = SoilProperties(1800, 5000, 30, 0.5)
+            tbm_properties = TBMProperties(6, 10, 5e6, 2e5)
+            res = calculate_all_stresses(soil_properties, tbm_properties, depth, 5, fc, 'At Rest')
+            res['depth'] = depth
+            res['friction_coefficient'] = fc
+            results.append(res)
+
+    df = pd.DataFrame(results)
+
+    # Depth vs Shield Friction for different friction coefficients
+    fig1 = px.line(df, x='depth', y='shield_friction', color='friction_coefficient',
+                   title='Depth vs Shield Friction for Different Friction Coefficients',
+                   labels={'depth': 'Depth (m)', 'shield_friction': 'Shield Friction (N)', 'friction_coefficient': 'Friction Coefficient'})
+    st.plotly_chart(fig1)
+
+    # Correlation heatmap
+    corr = df.corr()
+    fig2 = px.imshow(corr, title='Correlation Heatmap of Factors',
+                     labels=dict(color="Correlation Coefficient"))
+    st.plotly_chart(fig2)
+
+    # 3D scatter plot
+    fig3 = px.scatter_3d(df, x='depth', y='friction_coefficient', z='shield_friction',
+                         color='total_resistance', title='3D Scatter Plot: Depth, Friction Coefficient, and Shield Friction',
+                         labels={'depth': 'Depth (m)', 'friction_coefficient': 'Friction Coefficient', 'shield_friction': 'Shield Friction (N)', 'total_resistance': 'Total Resistance (N)'})
+    st.plotly_chart(fig3)
+
+def main():
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio("Go to", ["Main Page", "Calculator", "Visualization", "Data Analysis"])
+
+    if page == "Main Page":
+        main_page()
+    elif page == "Calculator":
+        calculator_page()
+    elif page == "Visualization":
+        visualization_page()
+    elif page == "Data Analysis":
+        data_analysis_page()
 
 if __name__ == "__main__":
     main()
