@@ -162,6 +162,7 @@ def display_formulas():
 
 def main():
     st.title("Advanced TBM Shield Friction Calculator with Visualization")
+    st.write("created by Kursat Kilic [ZE Geotechnic - Geotech Digitalization]")
 
     st.sidebar.header("Input Parameters")
     
