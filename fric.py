@@ -98,7 +98,7 @@ def display_formulas():
     st.write("- W: TBM weight")
 
 def create_tbm_visualization(tbm_properties, depth, water_table_depth, vertical_stress, horizontal_stress, pore_pressure, shield_friction):
-    
+    fig = go.Figure()
 
     # Ground surface
     fig.add_trace(go.Scatter(x=[-tbm_properties.diameter, tbm_properties.diameter * 2], y=[0, 0],
