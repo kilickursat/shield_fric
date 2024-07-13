@@ -303,7 +303,7 @@ def main():
     elif page == "Calculator":
         calculator_page()
     elif page == "Visualization":
-        visualization_page()
+        create_tbm_visualization()
     elif page == "Data Analysis":
         data_analysis_page()
 
