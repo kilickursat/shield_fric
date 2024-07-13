@@ -1,8 +1,6 @@
 import streamlit as st
 import math
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import matplotlib.animation as animation
+import plotly.graph_objs as go
 import numpy as np
 
 class SoilProperties:
@@ -55,47 +53,6 @@ def calculate_shield_friction(normal_force, friction_coefficient):
 
 def calculate_total_resistance(shield_friction, tbm_properties):
     return shield_friction + tbm_properties.weight
-
-def display_formulas():
-    st.write("### Empirical Formulas for Shield Friction Calculation")
-    
-    st.latex(r"\text{Vertical Stress: } \sigma_v = \rho g h")
-    st.write("Where:")
-    st.write("- σv: Vertical stress")
-    st.write("- ρ: Soil density")
-    st.write("- g: Gravitational acceleration (9.81 m/s²)")
-    st.write("- h: Depth")
-    
-    st.latex(r"\text{Horizontal Stress: } \sigma_h = K \sigma_v")
-    st.write("Where K is:")
-    st.latex(r"K_0 = \text{At Rest Earth Pressure Coefficient}")
-    st.latex(r"K_a = \tan^2(45° - \phi/2) \text{ (Active)}")
-    st.latex(r"K_p = \tan^2(45° + \phi/2) \text{ (Passive)}")
-    st.write("φ: Soil friction angle")
-    
-    st.latex(r"\text{Pore Water Pressure: } u = \gamma_w (h - h_w)")
-    st.write("Where:")
-    st.write("- u: Pore water pressure")
-    st.write("- γw: Unit weight of water")
-    st.write("- hw: Water table depth")
-    
-    st.latex(r"\text{Effective Stress: } \sigma' = \sigma - u")
-    
-    st.latex(r"\text{Normal Force: } N = (\sigma' + P_f) A")
-    st.write("Where:")
-    st.write("- N: Normal force")
-    st.write("- Pf: Face pressure")
-    st.write("- A: Shield surface area")
-    
-    st.latex(r"\text{Shield Friction: } F_f = \mu N")
-    st.write("Where:")
-    st.write("- Ff: Shield friction")
-    st.write("- μ: Friction coefficient")
-    
-    st.latex(r"\text{Total Resistance: } R = F_f + W")
-    st.write("Where:")
-    st.write("- R: Total resistance")
-    st.write("- W: TBM weight")
 
 def create_tbm_visualization(tbm_properties, depth, water_table_depth, vertical_stress, horizontal_stress, pore_pressure, shield_friction):
     fig = go.Figure()
@@ -161,7 +118,48 @@ def create_tbm_visualization(tbm_properties, depth, water_table_depth, vertical_
     )
 
     return fig
+
+def display_formulas():
+    st.write("### Empirical Formulas for Shield Friction Calculation")
     
+    st.latex(r"\text{Vertical Stress: } \sigma_v = \rho g h")
+    st.write("Where:")
+    st.write("- σv: Vertical stress")
+    st.write("- ρ: Soil density")
+    st.write("- g: Gravitational acceleration (9.81 m/s²)")
+    st.write("- h: Depth")
+    
+    st.latex(r"\text{Horizontal Stress: } \sigma_h = K \sigma_v")
+    st.write("Where K is:")
+    st.latex(r"K_0 = \text{At Rest Earth Pressure Coefficient}")
+    st.latex(r"K_a = \tan^2(45° - \phi/2) \text{ (Active)}")
+    st.latex(r"K_p = \tan^2(45° + \phi/2) \text{ (Passive)}")
+    st.write("φ: Soil friction angle")
+    
+    st.latex(r"\text{Pore Water Pressure: } u = \gamma_w (h - h_w)")
+    st.write("Where:")
+    st.write("- u: Pore water pressure")
+    st.write("- γw: Unit weight of water")
+    st.write("- hw: Water table depth")
+    
+    st.latex(r"\text{Effective Stress: } \sigma' = \sigma - u")
+    
+    st.latex(r"\text{Normal Force: } N = (\sigma' + P_f) A")
+    st.write("Where:")
+    st.write("- N: Normal force")
+    st.write("- Pf: Face pressure")
+    st.write("- A: Shield surface area")
+    
+    st.latex(r"\text{Shield Friction: } F_f = \mu N")
+    st.write("Where:")
+    st.write("- Ff: Shield friction")
+    st.write("- μ: Friction coefficient")
+    
+    st.latex(r"\text{Total Resistance: } R = F_f + W")
+    st.write("Where:")
+    st.write("- R: Total resistance")
+    st.write("- W: TBM weight")
+
 def main():
     st.title("Advanced TBM Shield Friction Calculator with Visualization")
 
