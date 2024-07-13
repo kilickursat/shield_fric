@@ -221,7 +221,7 @@ def calculator_page():
         for key, value in results.items():
             st.write(f"{key.replace('_', ' ').title()}: {value:.2f} Pa")
 
-def calculator_page():
+def visualization_page():
     st.title("Calculator")
     
     col1, col2 = st.columns(2)
